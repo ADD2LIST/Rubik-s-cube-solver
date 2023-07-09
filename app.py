@@ -1,7 +1,6 @@
 import streamlit as st
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
+import pydeck as pdk
 
 
 def rotate_face(face, clockwise=True):
@@ -20,10 +19,25 @@ def solve_rubiks_cube(cube):
 
 def render_cube(cube):
     # Render the Rubik's Cube with 3D visualization
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
+    face_colors = {
+        'white': [1.0, 1.0, 1.0],
+        'green': [0.0, 1.0, 0.0],
+        'red': [1.0, 0.0, 0.0],
+        'blue': [0.0, 0.0, 1.0],
+        'orange': [1.0, 0.65, 0.0],
+        'yellow': [1.0, 1.0, 0.0]
+    }
 
-    face_colors = ['white', 'green', 'red', 'blue', 'orange', 'yellow']
+    deck = pdk.Deck(
+        map_style='',
+        initial_view_state=pdk.ViewState(
+            latitude=0,
+            longitude=0,
+            zoom=0,
+            pitch=0,
+            bearing=0
+        )
+    )
 
     for i in range(6):
         face = cube[i]
@@ -31,18 +45,28 @@ def render_cube(cube):
         for r in range(rows):
             for c in range(cols):
                 if face[r, c] != '':
-                    color = face_colors.index(face[r, c])
-                    ax.bar3d(i, r, c, 1, 1, 1, color=color)
+                    color = face_colors[face[r, c]]
+                    deck.layers.append(
+                        pdk.Layer(
+                            'PolygonLayer',
+                            data=[{
+                                'position': [i, r, c],
+                                'color': color,
+                                'extruded': True,
+                                'wireframe': True
+                            }],
+                            get_polygon='position',
+                            get_fill_color='color',
+                            get_line_color=[0, 0, 0],
+                            filled=True,
+                            line_width_min_pixels=1,
+                            wireframe=True,
+                            extruded=True,
+                            pickable=False
+                        )
+                    )
 
-    ax.set_xlim([0, 6])
-    ax.set_ylim([0, 3])
-    ax.set_zlim([0, 3])
-    ax.set_xlabel('Side')
-    ax.set_ylabel('Row')
-    ax.set_zlabel('Column')
-    ax.set_title('Rubik\'s Cube')
-
-    plt.show()
+    st.pydeck_chart(deck)
 
 
 def main():
